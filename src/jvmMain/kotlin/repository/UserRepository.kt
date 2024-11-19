@@ -24,6 +24,14 @@ class UserRepository: CrudRepository<User, UUID> {
         }
     }
 
+    fun isUserRegistered(telegramId: Long): Boolean {
+        return transaction {
+            UserTable
+                .select(UserTable.telegramId eq telegramId)
+                .count() != 0.toLong()
+        }
+    }
+
     override fun findById(id: UUID): User? {
         return transaction {
             UserTable.selectAll().where { UserTable.id eq id }
@@ -55,4 +63,6 @@ class UserRepository: CrudRepository<User, UUID> {
             } > 0
         }
     }
+
+
 }
