@@ -18,6 +18,7 @@ class ManagerBot {
         val botName: String = env["BOT_NAME"] ?: throw IllegalStateException("BOT_NAME is not set in .env")
         val botToken: String = env["BOT_TOKEN"] ?: throw IllegalStateException("BOT_TOKEN is not set in .env")
         AdminBot(botName, botToken)
+
     }
 
     fun managerBot(){

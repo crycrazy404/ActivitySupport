@@ -1,53 +1,55 @@
 package teleBot
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.Update
+import teleBot.handlers.RegistrationHandler
 
-class AdminBot(private var botName: String, private var botToken: String): TelegramLongPollingBot() {
+class AdminBot(
+    private var botName: String,
+    private var botToken: String)
+    : TelegramLongPollingBot(botToken)
+{
 
+    override fun getBotUsername(): String = botName
+    private val registrationManager = RegistrationHandler {
+        message: SendMessage -> execute(message) // Функция для отправки сообщений
 
-    override fun getBotToken(): String {
-        return this.botToken
-    }
-
-    override fun getBotUsername(): String {
-        return this.botName
     }
 
     override fun onUpdateReceived(update: Update?) {
-        if (update?.hasMessage() == true && update.message?.hasText() == true) {
-            val message = update.message
-            val chatId = update.message.chatId
+        update?.let {
+            if (it.hasMessage() && it.message.hasText()) {
+                val message = it.message
+                val userId = message.from.id
 
-            if (message.text.startsWith("/register") && isFromRegistrationTopic(message)) {
-                handleRegisterCommand(chatId)
-                val mapper= jacksonObjectMapper()
-                val json = mapper.writeValueAsString(message)
-                println(json)
+                // Если это команда /register
+                if (message.text.startsWith("/register") && isFromRegistrationTopic(message)) {
+                    registrationManager.startRegistration(userId, message.from.userName ?: "User")
+                } else if (registrationManager.isUserInRegistration(userId)) {
+                    registrationManager.handleUserRegistrationInput(userId, message.text)
+                }
+            }
+            if (it.hasCallbackQuery()) {
+                val callbackQuery = it.callbackQuery
+                registrationManager.handleCallbackQuery(callbackQuery.from.id, callbackQuery.data)
             }
         }
     }
 
-    private fun handleRegisterCommand(chatId: Long?) {
-        val responseText = "Вы успешно зарегистрированы!"
-
-        val message = SendMessage().apply {
-            this.chatId = chatId.toString()
-            this.text = responseText
-        }
-
+    private fun sendMessage(chatId: Long, text: String) {
+        val message = SendMessage()
+        message.chatId = chatId.toString()
+        message.text = text
         try {
-            execute(message)
+            execute(message) // Отправка сообщения через API Telegram
         } catch (e: Exception) {
-            println("Error sending message: ${e.message}")
+            println("Ошибка при отправке сообщения: ${e.message}")
         }
     }
 
     private fun isFromRegistrationTopic(message: Message): Boolean{
-        return message.messageThreadId == 5
+        return message.isGroupMessage && message.messageThreadId == 5
     }
-
 }
