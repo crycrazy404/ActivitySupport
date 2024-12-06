@@ -18,7 +18,6 @@ fun app() {
     val viewMain = MainPageBuilder()
     ManagerBot().managerBot()
     viewMain.init(iter)
-
 }
 
 fun main() = application {

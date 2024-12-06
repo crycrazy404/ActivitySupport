@@ -54,7 +54,7 @@ kotlin {
                 implementation("org.jetbrains.exposed:exposed-java-time:0.50.0") // Для работы с LocalDate и LocalDateTime
                 implementation("com.h2database:h2:2.3.232")    // Для H2
                 implementation("org.xerial:sqlite-jdbc:3.42.0.0")
-                implementation("org.telegram:telegrambots:6.7.0")
+                implementation("org.telegram:telegrambots:6.9.7.0")
                 implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
                 implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.0")
             }

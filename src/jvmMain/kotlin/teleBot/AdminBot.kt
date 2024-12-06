@@ -2,54 +2,74 @@ package teleBot
 
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
-import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.Update
-import teleBot.handlers.RegistrationHandler
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException
+import teleBot.utils.RegistrationHandler
 
 class AdminBot(
     private var botName: String,
     private var botToken: String)
     : TelegramLongPollingBot(botToken)
 {
+    override fun getBotUsername(): String {
+        return botName
+    }
 
-    override fun getBotUsername(): String = botName
-    private val registrationManager = RegistrationHandler {
-        message: SendMessage -> execute(message) // Функция для отправки сообщений
-
+    private val registrationHandler = RegistrationHandler{ message: SendMessage ->
+        execute(message)
     }
 
     override fun onUpdateReceived(update: Update?) {
         update?.let {
-            if (it.hasMessage() && it.message.hasText()) {
-                val message = it.message
-                val userId = message.from.id
-
-                // Если это команда /register
-                if (message.text.startsWith("/register") && isFromRegistrationTopic(message)) {
-                    registrationManager.startRegistration(userId, message.from.userName ?: "User")
-                } else if (registrationManager.isUserInRegistration(userId)) {
-                    registrationManager.handleUserRegistrationInput(userId, message.text)
+            if (it.hasCallbackQuery()) {
+                when{
+                    registrationHandler.isUserInRegistration(it.callbackQuery.from.id) -> {
+                        registrationHandler.handleRegistrationCallBackQuery(it.callbackQuery)
+                    }
+                    else ->  sendMessage(it.callbackQuery.from.id.toString(), "Нечего обрабатывать")
                 }
             }
-            if (it.hasCallbackQuery()) {
-                val callbackQuery = it.callbackQuery
-                registrationManager.handleCallbackQuery(callbackQuery.from.id, callbackQuery.data)
+            if (it.hasMessage()) {
+                val chatId = it.message.chatId.toString()
+                val receivedText = it.message.text
+                if (receivedText == "/start" && it.message.isUserMessage) {
+                    val text = "Привет, ${it.message.from.firstName}! Для начала регистрации напиши /register"
+                    sendMessage(chatId, text)
+                } else if (receivedText == "/register" && it.message.isUserMessage) {
+                    registrationHandler.startRegistration(it.message.from.id)
+                } else if (registrationHandler.isUserInRegistration(it.message.from.id)) {
+                    registrationHandler.handelUserRegistrationQuery(it.message)
+                }
             }
         }
     }
 
-    private fun sendMessage(chatId: Long, text: String) {
-        val message = SendMessage()
-        message.chatId = chatId.toString()
-        message.text = text
+    private fun sendMessage(chatId: String, text: String){
+        val message = SendMessage().apply {
+            this.chatId = chatId
+            this.text = text
+            this.parseMode = "Markdown"
+        }
         try {
-            execute(message) // Отправка сообщения через API Telegram
-        } catch (e: Exception) {
-            println("Ошибка при отправке сообщения: ${e.message}")
+            execute(message)
+        }catch (e: TelegramApiException){
+            e.printStackTrace()
         }
     }
 
-    private fun isFromRegistrationTopic(message: Message): Boolean{
-        return message.isGroupMessage && message.messageThreadId == 5
+
+    private fun sendMessageWithInlineKeyboard(userId: String, text: String, replyMarkup: InlineKeyboardMarkup) {
+        val message = SendMessage(userId, text)
+        try {
+            message.replyMarkup = replyMarkup
+            execute(message)
+        }catch (exc: TelegramApiException){
+            exc.printStackTrace()
+        }
+    }
+
+    private fun sendMessageWithKeyboard(userId: String, text: String) {
+
     }
 }

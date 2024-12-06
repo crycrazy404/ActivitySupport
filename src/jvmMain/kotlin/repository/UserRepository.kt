@@ -1,46 +1,35 @@
 package repository
 
-import models.roles.RoleEntity
 import models.user.UserEntity
-import models.user.table.UserRoleTable
 import models.user.table.UserTable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
-class UserRepository: CrudRepository<UserEntity, Long> {
-    override fun create(entity: UserEntity): Long {
-        val newUser =
-            transaction {
+class UserRepositoryOld: CrudRepository<UserEntity, Long> {
+        override fun create(entity: UserEntity): Long {
+            return transaction {
                 UserEntity.new {
                     telegramId = entity.telegramId
                     firstName = entity.firstName
                     secondName = entity.secondName
                     group = entity.group
-                }.let { u ->
-                    UserRoleTable.insert {
-                        it[user] = u.id
-                        it[role] = RoleEntity.findById(entity.id)!!.id
-                    }
-                    commit()
-                    u
-                }
+                }.id.value
             }
-        return newUser.id.value
-    }
+        }
 
-    fun isUserRegistered(telegramId: Long): Boolean =
-        UserEntity.find{
+    fun isUserRegistered(telegramId: Long): Boolean = transaction {
+        UserEntity.find {
             UserTable.telegramId eq telegramId
         }.empty().not()
+    }
 
-
-    override fun findById(id: Long): UserEntity? =
-         UserEntity.find{
-             UserTable.id eq id
-         }.firstOrNull()
+    override fun findById(id: Long): UserEntity? = transaction {
+        UserEntity.find {
+            UserTable.id eq id
+        }.firstOrNull()
+    }
 
 
     override fun findAll(): List<UserEntity> =
@@ -60,7 +49,6 @@ class UserRepository: CrudRepository<UserEntity, Long> {
             it[firstName] = entity.firstName
             it[secondName] = entity.secondName
             it[group] = entity.group
-            it[role] = 2
             } > 0
 
 }
