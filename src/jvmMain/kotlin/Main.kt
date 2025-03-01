@@ -3,25 +3,28 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import models.DBManager
-import parser.Builder
+import db.models.DBManager
 import teleBot.ManagerBot
-import view.mainPage.MainPageBuilder
+import userInterface.mainPage.MainPageBuilder
+import util.parser.Builder
 
 @Composable
 @Preview
 
 fun app() {
-    val dbManager = DBManager("sqlight")
-    dbManager.createTables()
-    val iter = Builder("C:\\Users\\OMEN 16\\Desktop\\diplom\\Activity\\src\\jvmMain\\kotlin\\example.pptx").getIterator()
-    val viewMain = MainPageBuilder()
-    ManagerBot().managerBot()
-    viewMain.init(iter)
+    DBManager("sqlight").createTables()
+    val builder = Builder()
+    val bot = ManagerBot(builder)
+    bot.managerBot()
+
+    MainPageBuilder(Builder(), bot.getBot()).init()
 }
 
 fun main() = application {
-    Window(onCloseRequest = ::exitApplication) {
+    Window(onCloseRequest = {
+        println("Завершение программы...")
+        exitApplication()
+    }) {
         app()
     }
 }

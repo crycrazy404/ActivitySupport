@@ -57,6 +57,8 @@ kotlin {
                 implementation("org.telegram:telegrambots:6.9.7.0")
                 implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
                 implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.0")
+                implementation("org.postgresql:postgresql:42.5.1")
+                implementation("com.zaxxer:HikariCP:5.0.1")
             }
         }
         val jvmTest by getting

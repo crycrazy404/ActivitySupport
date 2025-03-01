@@ -5,8 +5,11 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.TelegramBotsApi
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession
+import util.parser.Builder
 
-class ManagerBot {
+class ManagerBot(iter: Builder) {
+
+    private lateinit var adminBot: AdminBot;
 
     private val env = dotenv{
         directory = "./"
@@ -17,8 +20,13 @@ class ManagerBot {
     private val bot: TelegramLongPollingBot by lazy {
         val botName: String = env["BOT_NAME"] ?: throw IllegalStateException("BOT_NAME is not set in .env")
         val botToken: String = env["BOT_TOKEN"] ?: throw IllegalStateException("BOT_TOKEN is not set in .env")
-        AdminBot(botName, botToken)
+        AdminBot(botName, botToken).also {
+            this.adminBot = it
+        }
+    }
 
+    fun getBot(): AdminBot {
+        return this.adminBot
     }
 
     fun managerBot(){
